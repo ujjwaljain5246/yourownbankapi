@@ -27,7 +27,7 @@ const makeTransaction = async (req, res) => {
 
         // Validate if token sent by user is not empty or null
         if (!token) {
-            return res.status(401).json({ code: 401, message: "Authorization token is missing." });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4008", message: "Authorization token is missing." });
         }
 
         // Verify the token
@@ -35,13 +35,13 @@ const makeTransaction = async (req, res) => {
         try {
             decodedToken = jwt.verify(token, SECRET_KEY);
         } catch (error) {
-            return res.status(401).json({ code: 401, message: "Invalid or expired token.", error: error });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4009", message: "Invalid or expired token.", error: error });
         }
 
         // Check if the user available in the UserModel
         // If yes, then continue else return the response with respective error
         const exisingUser = await userModel.findOne({ _id: userId });
-        if (exisingUser == null) return res.status(404).json({ code: 404, message: "You are not our customer. So, You are not allowed to complete this transaction" });
+        if (exisingUser == null) return res.status(404).json({ code: 404, errorCode: "ERR_4002", message: "You are not our customer. So, You are not allowed to complete this transaction" });
 
         // Get all the details from UserModel table of DB in decrypted mode
         const decryptedMobileNumber = decrypt(exisingUser.userContactDetails.mobile);
@@ -58,24 +58,24 @@ const makeTransaction = async (req, res) => {
         ) {
             // In case Token format is correct, token has correct paylod but the credential inside the token is of different user then this will come and make sure
             // that token of that different user is also not expired
-            return res.status(403).json({ code: 403, message: "Token does not match the user's credentials." });
+            return res.status(403).json({ code: 403, errorCode: "ERR_4010", message: "Token does not match the user's credentials." });
         }
 
         // Fetch the account details of sender and check if the user had availalble balance is greater or equal to transfer money.
         const senderBankDetails = await userBankDetailsModel.findOne({ userCustomerId: userId });
-        if (amount <= 0) return res.status(400).json({code: 400, message : "Entered amount should be greater than 0"});
-        if (senderBankDetails.userAvailableBalance < amount) return res.status(400).json({ code: 400, message: "Insufficient balance" });
+        if (amount <= 0) return res.status(400).json({code: 400, errorCode: "ERR_4007", message : "Entered amount should be greater than 0"});
+        if (senderBankDetails.userAvailableBalance < amount) return res.status(400).json({ code: 400, errorCode: "ERR_4006", message: "Insufficient balance" });
 
         // To fetch the account details of receiver, based on either upiId or bank account details
         let receiverBankDetails;
         if (modeOfTransaction == "UPI") {
-            if (upiId == "") return res.status(400).json({ code: 400, message: "UPI Id is missing" });
+            if (upiId == "") return res.status(400).json({ code: 400, errorCode: "ERR_4012", message: "UPI Id is missing" });
             receiverBankDetails = await userBankDetailsModel.findOne({ "userUpiDetails.upiId": encrypt(upiId) });
-            if (receiverBankDetails == null) return res.status(400).json({ code: 400, message: "No user found with the given UPI Id." });
+            if (receiverBankDetails == null) return res.status(400).json({ code: 400, errorCode: "ERR_4003", message: "No user found with the given UPI Id." });
         } else {
-            if (accountNumber == "" && ifscCode == "") return res.status(400).json({ code: 400, message: "Account number and IFSC code is missing" });
-            if (accountNumber == "") return res.status(400).json({ code: 400, message: "Account number is missing" });
-            if (ifscCode == "") return res.status(400).json({ code: 400, message: "IFSC code is missing" });
+            if (accountNumber == "" && ifscCode == "") return res.status(400).json({ code: 400, errorCode: "ERR_4015", message: "Account number and IFSC code is missing" });
+            if (accountNumber == "") return res.status(400).json({ code: 400, errorCode: "ERR_4013", message: "Account number is missing" });
+            if (ifscCode == "") return res.status(400).json({ code: 400, errorCode: "ERR_4014", message: "IFSC code is missing" });
             receiverBankDetails = await userBankDetailsModel.findOne({
                 "userBankAccountDetails.accountNumber": encrypt(accountNumber),
                 "userBankAccountDetails.ifscCode": ifscCode
@@ -87,7 +87,7 @@ const makeTransaction = async (req, res) => {
                 });
 
                 if (accountExists) {
-                    return res.status(400).json({ code: 400, message: "Incorrect IFSC code for the given account number." });
+                    return res.status(400).json({ code: 400, errorCode: "ERR_4005", message: "Incorrect IFSC code for the given account number." });
                 }
 
                 // Check if only IFSC code exists (but account number is incorrect)
@@ -96,15 +96,15 @@ const makeTransaction = async (req, res) => {
                 });
 
                 if (ifscExists) {
-                    return res.status(400).json({ code: 400, message: "Incorrect account number for the given IFSC code." });
+                    return res.status(400).json({ code: 400, errorCode: "ERR_4004", message: "Incorrect account number for the given IFSC code." });
                 }
 
                 // If neither account number nor IFSC exists
-                return res.status(400).json({ code: 400, message: "No user found with the given bank account number and IFSC code." });
+                return res.status(400).json({ code: 400, errorCode: "ERR_4016", message: "No user found with the given bank account number and IFSC code." });
             }
         }
 
-        if (receiverBankDetails.userCustomerId == userId) return res.status(400).json({ code: 400, message: "This is not possible because you are trying to transfer money from your own account to your own account" });
+        if (receiverBankDetails.userCustomerId == userId) return res.status(400).json({ code: 400, errorCode: "ERR_4017", message: "This is not possible because you are trying to transfer money from your own account to your own account" });
 
         const newBalanceToSender = senderBankDetails.userAvailableBalance - amount;
         const newBalanceToReceiver = receiverBankDetails.userAvailableBalance + amount;
@@ -168,7 +168,7 @@ const makeTransaction = async (req, res) => {
 
 
     } catch (error) {
-        return res.status(500).json({ code: 500, message: "Server error", error: error });
+        return res.status(500).json({ code: 500, errorCode: "ERR_5002", message: "Server error", error: error });
     }
 
 }

@@ -19,7 +19,7 @@ const userBankDetails = async (req, res) => {
 
         // Validate if token sent by user is not empty or null
         if (!token) {
-            return res.status(401).json({ code: 401, message: "Authorization token is missing." });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4008", message: "Authorization token is missing." });
         }
 
         // Verify the token
@@ -27,13 +27,13 @@ const userBankDetails = async (req, res) => {
         try {
             decodedToken = jwt.verify(token, SECRET_KEY);
         } catch (error) {
-            return res.status(401).json({ code: 401, message: "Invalid or expired token.", error: error });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4009", message: "Invalid or expired token.", error: error });
         }
 
         // Check if the user available in the UserModel
         // If yes, then continue else return the response with respective error
         const exisingUser = await userModel.findOne({ _id: userId });
-        if (exisingUser == null) return res.status(404).json({ code: 404, message: "No any details available of userId." });
+        if (exisingUser == null) return res.status(404).json({ code: 404, errorCode: "ERR_4002", message: "No any details available of userId." });
 
         // If not then add into userBankDetailsModel and then return the response
         // Get all the details from UserModel table of DB in decrypted mode
@@ -54,7 +54,7 @@ const userBankDetails = async (req, res) => {
         ) {
             // In case Token format is correct, token has correct paylod but the credential inside the token is of different user then this will come and make sure
             // that token of that different user is also not expired
-            return res.status(403).json({ code: 403, message: "Token does not match the user's credentials." });
+            return res.status(403).json({ code: 403, errorCode: "4010", message: "Token does not match the user's credentials." });
         }
 
         // Now check if the user's bank details available or not
@@ -96,7 +96,7 @@ const userBankDetails = async (req, res) => {
 
         return res.status(200).json({ code: 200, message: "User details fetched successfully", userBankDetails: responseUser });
     } catch (error) {
-        return res.status(500).json({ code: 500, message: "Server error", error: error })
+        return res.status(500).json({ code: 500, errorCode: "ERR_5002", message: "Server error", error: error })
     }
 }
 
@@ -108,7 +108,7 @@ const userTransactionHistory = async (req, res) => {
 
         // Validate if token sent by user is not empty or null
         if (!token) {
-            return res.status(401).json({ code: 401, message: "Authorization token is missing." });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4008", message: "Authorization token is missing." });
         }
 
         // Verify the token
@@ -116,13 +116,13 @@ const userTransactionHistory = async (req, res) => {
         try {
             decodedToken = jwt.verify(token, SECRET_KEY);
         } catch (error) {
-            return res.status(401).json({ code: 401, message: "Invalid or expired token.", error: error });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4009", message: "Invalid or expired token.", error: error });
         }
 
         // Check if the user available in the UserModel
         // If yes, then continue else return the response with respective error
         const exisingUser = await userModel.findOne({ _id: userId });
-        if (exisingUser == null) return res.status(404).json({ code: 404, message: "No any details available of userId." });
+        if (exisingUser == null) return res.status(404).json({ code: 404, errorCode: "ERR_4002", message: "No any details available of userId." });
 
         // Get all the details from UserModel table of DB in decrypted mode
         const decryptedMobileNumber = decrypt(exisingUser.userContactDetails.mobile);
@@ -139,7 +139,7 @@ const userTransactionHistory = async (req, res) => {
         ) {
             // In case Token format is correct, token has correct paylod but the credential inside the token is of different user then this will come and make sure
             // that token of that different user is also not expired
-            return res.status(403).json({ code: 403, message: "Token does not match the user's credentials." });
+            return res.status(403).json({ code: 403, errorCode: "4010", message: "Token does not match the user's credentials." });
         }
 
         const userTransactionHistory = await userTransactionDetailsModel.find({
@@ -154,7 +154,7 @@ const userTransactionHistory = async (req, res) => {
         return res.status(200).json({ code: 200, message: "Transaction history fetched successfully", transactionHistory: responseTransactionHistory });
 
     } catch (error) {
-        return res.status(500).json({ code: 500, message: "Server error", error: error });
+        return res.status(500).json({ code: 500, errorCode: "ERR_5002", message: "Server error", error: error });
     }
 }
 
@@ -166,7 +166,7 @@ const userAvailableBalance = async (req, res) => {
 
         // Validate if token sent by user is not empty or null
         if (!token) {
-            return res.status(401).json({ code: 401, message: "Authorization token is missing." });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4008", message: "Authorization token is missing." });
         }
 
         // Verify the token
@@ -174,13 +174,13 @@ const userAvailableBalance = async (req, res) => {
         try {
             decodedToken = jwt.verify(token, SECRET_KEY);
         } catch (error) {
-            return res.status(401).json({ code: 401, message: "Invalid or expired token.", error: error });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4009", message: "Invalid or expired token.", error: error });
         }
 
         // Check if the user available in the UserModel
         // If yes, then continue else return the response with respective error
         const exisingUser = await userModel.findOne({ _id: userId });
-        if (exisingUser == null) return res.status(404).json({ code: 404, message: "No any details available of userId." });
+        if (exisingUser == null) return res.status(404).json({ code: 404, errorCode: "ERR_4002", message: "No any details available of userId." });
 
         // Get all the details from UserModel table of DB in decrypted mode
         const decryptedMobileNumber = decrypt(exisingUser.userContactDetails.mobile);
@@ -197,13 +197,13 @@ const userAvailableBalance = async (req, res) => {
         ) {
             // In case Token format is correct, token has correct paylod but the credential inside the token is of different user then this will come and make sure
             // that token of that different user is also not expired
-            return res.status(403).json({ code: 403, message: "Token does not match the user's credentials." });
+            return res.status(403).json({ code: 403, errorCode: "4010", message: "Token does not match the user's credentials." });
         }
 
         // Now check if the user's bank details available or not
         // If yes, then just return the available details after converting details into decrypted mode
         const isUserBankDetailsAvailable = await userBankDetailsModel.findOne({ userCustomerId: userId });
-        if (isUserBankDetailsAvailable == null) return res.status(404).json({code: 404, message: "Your bank details are now available with us."})
+        if (isUserBankDetailsAvailable == null) return res.status(404).json({code: 404, errorCode: "ERR_4011", message: "Your bank details are not available with us."})
         if (isUserBankDetailsAvailable) {
             const userAvailableBalanceWithBankDetails = {
                 userAvailableBalance: isUserBankDetailsAvailable.userAvailableBalance,
@@ -214,7 +214,7 @@ const userAvailableBalance = async (req, res) => {
             return res.status(200).json({ code: 200, message: "User balance fetched successfully", userAvailableBalanceWithBankDetails: userAvailableBalanceWithBankDetails });
         }
     } catch(error) {
-        return res.status(500).json({ code: 500, message: "Server error", error: error });
+        return res.status(500).json({ code: 500, errorCode: "ERR_5002", message: "Server error", error: error });
     }
 }
 

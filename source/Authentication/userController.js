@@ -37,30 +37,28 @@ const signup = async (req, res) => {
             ]
         });
 
-        // If the user is existing one then throw respective error
+        // If the user is an existing one, throw a respective error
         if (existingUserObject) {
             // Build conflictFields dynamically
-            const conflictFields = {};
-        
+            const conflictFields = [];
+
             if (existingUserObject.userContactDetails.mobile === encodedMobile) {
-                conflictFields.mobile = mobile;
+                conflictFields.push({ field: "mobile", value: mobile, errorCode: "ERR_4018" });
             }
             if (existingUserObject.userContactDetails.email === email) {
-                conflictFields.email = email;
+                conflictFields.push({ field: "email", value: email, errorCode: "ERR_4019" });
             }
             if (existingUserObject.userPersonalDetails.aadharNumber === encodedAadharNumber) {
-                conflictFields.aadharNumber = aadharNumber;
+                conflictFields.push({ field: "aadharNumber", value: aadharNumber, errorCode: "ERR_4020" });
             }
             if (existingUserObject.userPersonalDetails.panNumber === encodedPanNumbber) {
-                conflictFields.panNumber = panNumber;
+                conflictFields.push({ field: "panNumber", value: panNumber, errorCode: "ERR_4021" });
             }
-        
-            return res.status(400).json({
-                code : 400,
-                message: "User already exists with one of the provided details.",
-                conflictFields
-            });
-        }
+
+            return res.status(400).json({code: 400, errorCode: "ERR_4022", message: "User already exists with one of the provided details.", conflicts: conflictFields // Returns an array of objects with field, value, and errorCode
+        });
+}
+
         
 
         // If no match, create a new user into the DB
@@ -96,7 +94,7 @@ const signup = async (req, res) => {
 
         return res.status(201).json({ code : 201, message: "User created successfully.", user: responseUser, token : userJwt });
     } catch (error) {
-        return res.status(500).json({ code : 500, message: "Server error", error: error.message });
+        return res.status(500).json({ code : 500, errorCode: "ERR_5002", message: "Server error", error: error.message });
     }
 
 }
@@ -115,11 +113,11 @@ const signin = async (req, res) => {
             ? await userModel.findOne({ "userContactDetails.email": userName })
             : await userModel.findOne({ "userContactDetails.mobile": userName });
         
-        if (isUserExisting == null) return res.status(404).json({code : 404, message : "You are not our customer. Give us chance to provide service to you."});
+        if (isUserExisting == null) return res.status(404).json({code : 404, errorCode: "ERR_4002", message : "You are not our customer. Give us chance to provide service to you."});
             
         // Yes, User is existing. So, now match the entered password and send the response accordingly
         const isPasswordMatch = await bcrypt.compare(password, isUserExisting.userSecurityDetails.password);
-        if (isPasswordMatch == false) return res.status(400).json({code : 400, message : "Wrong password"});
+        if (isPasswordMatch == false) return res.status(400).json({code : 400, errorCode: "ERR_4001", message : "Wrong password"});
 
         // Password match
         // Return a JWT to the logged in user
@@ -163,7 +161,7 @@ const signin = async (req, res) => {
         return res.status(200).json({code : 200, message: "Login success", user : responseUser, token : userJwt});
         
     } catch(error) {
-        res.status(500).json({code : 500, message : "Server error", error : error});
+        res.status(500).json({code : 500, errorCode: "ERR_5002", message : "Server error", error : error});
     }
 }
 
@@ -175,7 +173,7 @@ const deleteUser = async (req, res) => {
 
         // Validate if token sent by user is not empty or null
         if (!token) {
-            return res.status(401).json({ code: 401, message: "Authorization token is missing." });
+            return res.status(401).json({ code: 401, errorCode: "ERR_4008", message: "Authorization token is missing." });
         }
 
         // Verify the token
@@ -183,7 +181,7 @@ const deleteUser = async (req, res) => {
         try {
             decodedToken = jwt.verify(token, SECRET_KEY);
         } catch (error) {
-            return res.status(401).json({ code: 401, message: "Invalid or expired token." , error : error});
+            return res.status(401).json({ code: 401, errorCode: "ERR_4009", message: "Invalid or expired token." , error : error});
         }
 
         // Check if userName is email or mobile
@@ -196,12 +194,12 @@ const deleteUser = async (req, res) => {
             : await userModel.findOne({ "userContactDetails.mobile": encryptedUserName });
 
         if (isUserExisting == null) {
-            return res.status(404).json({ code: 404, message: "You are not our customer. Give us chance to provide service to you." });
+            return res.status(404).json({ code: 404, errorCode: "ERR_4002", message: "You are not our customer. Give us chance to provide service to you." });
         }
 
         // Verify password
         const isPasswordMatch = await bcrypt.compare(password, isUserExisting.userSecurityDetails.password);
-        if (!isPasswordMatch) return res.status(400).json({ code: 400, message: "Incorrect password." });
+        if (!isPasswordMatch) return res.status(400).json({ code: 400, errorCode: "ERR_4001", message: "Incorrect password." });
 
         // Verify the token matches the user's data
         if (
@@ -211,7 +209,7 @@ const deleteUser = async (req, res) => {
         ) {
             // In case Token format is correct, token has correct paylod but the credential inside the token is of different user then this will come and make sure
             // that token of that different user is also not expired
-            return res.status(403).json({ code: 403, message: "Token does not match the user's credentials." });
+            return res.status(403).json({ code: 403, errorCode: "ERR_4010", message: "Token does not match the user's credentials." });
         }
 
         // If above all case fails then at last delete the user and all related data from db
@@ -221,7 +219,7 @@ const deleteUser = async (req, res) => {
         // Send response
         return res.status(200).json({ code: 200, message: "User details deleted successfully." });
     } catch (error) {
-        res.status(500).json({ code: 500, message: "Server error.", error: error });
+        res.status(500).json({ code: 500, errorCode: "ERR_5002", message: "Server error.", error: error });
     }
 }
 
