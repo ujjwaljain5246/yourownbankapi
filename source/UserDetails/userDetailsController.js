@@ -89,7 +89,7 @@ const userBankDetails = async (req, res) => {
             userAvailableBalance: initialDepositeAmount,
             userBankAccountDetails: { accountNumber: generateUniqueAccountNumber(decryptedMobileNumber, decryptedAadharNumber), ifscCode: generateUniqueIFSCCode(decryptedAddress.pincode) },
             userPersonalDetails: { name: exisingUser.userPersonalDetails.name, gender: exisingUser.userPersonalDetails.gender, aadharNumber: decryptedAadharNumber, panNumber: decryptedPanNumber },
-            userContactDetails: { decryptedMobileNumber, email: exisingUser.userContactDetails.email, address: decryptedAddress },
+            userContactDetails: { mobile: decryptedMobileNumber, email: exisingUser.userContactDetails.email, address: decryptedAddress },
             userAccountDetails: exisingUser.userAccountDetails,
             userUpiDetails: { upiId },
         }
